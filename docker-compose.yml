@@ -1,0 +1,122 @@
+version: "3.7"
+
+services:
+  db:
+    image: mongo
+    restart: always
+    container_name: db-service
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+    networks:
+      - my-network
+  sgbd:
+    image: mongo-express
+    restart: always
+    container_name: sgbd-service
+    ports:
+      - "8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${ME_CONFIG_MONGODB_ADMINUSERNAME}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${ME_CONFIG_MONGODB_ADMINPASSWORD}
+      ME_CONFIG_MONGODB_URL: ${ME_CONFIG_MONGODB_URL}
+      ME_CONFIG_MONGODB_SERVER: ${ME_CONFIG_MONGODB_SERVER}
+    depends_on:
+      - db
+    networks:
+      - my-network
+  customers-service:
+    build:
+      context: ./services/customers
+      dockerfile: Dockerfile
+    container_name: customers-service
+    ports:
+      - "3001:3000"
+    volumes:
+      - ./services/customers:/app
+    depends_on:
+      - db
+    networks:
+      - my-network
+  employees-service:
+    build:
+      context: ./services/employees
+      dockerfile: Dockerfile
+    container_name: employees-service
+    ports:
+      - "3002:3000"
+    volumes:
+      - ./services/employees:/app
+    depends_on:
+      - db
+    networks:
+      - my-network
+  products-service:
+    build:
+      context: ./services/products
+      dockerfile: Dockerfile
+    container_name: products-service
+    ports:
+      - "3003:3000"
+    volumes:
+      - ./services/products:/app
+    depends_on:
+      - db
+    networks:
+      - my-network
+  sales-service:
+    build:
+      context: ./services/sales
+      dockerfile: Dockerfile
+    container_name: sales-service
+    ports:
+      - "3004:3000"
+    volumes:
+      - ./services/sales:/app
+    depends_on:
+      - db
+      - customers-service
+      - employees-service
+      - products-service
+    networks:
+      - my-network
+  payments-service:
+    build:
+      context: ./services/payments
+      dockerfile: Dockerfile
+    container_name: payments-service
+    ports:
+      - "3005:3000"
+    volumes:
+      - ./services/payments:/app
+    depends_on:
+      - db
+      - customers-service
+      - employees-service
+      - products-service
+      - sales-service
+    networks:
+      - my-network
+  nginx:
+    # image: nginx
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: proxy-service
+    ports:
+      - "80:80"
+    depends_on:
+      - db
+      - sgbd
+      - customers-service
+      - employees-service
+      - products-service
+      - sales-service
+      - payments-service
+    networks:
+      - my-network
+networks:
+  my-network:
+    driver: bridge
