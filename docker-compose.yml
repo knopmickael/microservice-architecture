@@ -27,6 +27,18 @@ services:
       - db
     networks:
       - my-network
+  redis:
+    image: redis:latest
+    # build:
+    #   context: ./redis
+    #   dockerfile: Dockerfile
+    container_name: redis-service
+    ports:
+      - "6379:6379"
+    depends_on:
+      - db
+    networks:
+      - my-network
   customers-service:
     build:
       context: ./services/customers
@@ -110,11 +122,14 @@ services:
     depends_on:
       - db
       - sgbd
+      - redis
       - customers-service
       - employees-service
       - products-service
       - sales-service
       - payments-service
+    networks:
+      - my-network
     networks:
       - my-network
 networks:
